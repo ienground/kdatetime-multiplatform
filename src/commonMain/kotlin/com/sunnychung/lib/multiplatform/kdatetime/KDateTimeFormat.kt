@@ -148,7 +148,7 @@ class KDateTimeFormat(val pattern: String) {
         val localDateTime = datetime
         val localDate by lazy {
             if (datetime is KZonedInstant) {
-                datetime.datePart()
+                datetime.toKZonedDateTime().datePart()
             } else {
                 KGregorianCalendar.utcDateFromTimestamp(localDateTime.toMilliseconds())
             }
