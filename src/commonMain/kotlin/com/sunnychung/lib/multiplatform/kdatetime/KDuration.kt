@@ -1,7 +1,9 @@
 package com.sunnychung.lib.multiplatform.kdatetime
 
 import com.sunnychung.lib.multiplatform.kdatetime.annotation.AndroidParcelize
+import kotlinx.serialization.Serializable
 
+@Serializable
 @AndroidParcelize
 open class KDuration internal constructor(val millis: Long) : KDateTimeFormattable,
     Comparable<KDuration>, AndroidParcelable {
