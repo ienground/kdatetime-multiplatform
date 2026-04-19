@@ -371,7 +371,7 @@ class KDateTimeFormat(val pattern: String) {
 
     @Deprecated("Use parseToKZonedDateTime(String).toKZonedInstant().dropZoneOffset() instead")
     fun parseToKInstant(input: String): KInstant {
-        val instantWithZone =  parseToKZonedDateTime(input = input).toKZonedInstant()
+        val instantWithZone = parseToKZonedDateTime(input = input).toKZonedInstant()
         return instantWithZone.dropZoneOffset()
     }
 
