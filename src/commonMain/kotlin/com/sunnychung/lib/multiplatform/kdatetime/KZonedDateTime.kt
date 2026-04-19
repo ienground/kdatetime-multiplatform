@@ -43,7 +43,7 @@ class KZonedDateTime(
     /**
      * Converts to a Zoned Instant using the Gregorian Calendar, and then drops the zone offset.
      */
-    inline fun toKInstant(): KInstant {
+    fun toKInstant(): KInstant {
         return toKZonedInstant().dropZoneOffset()
     }
 
@@ -115,7 +115,7 @@ class KZonedDateTime(
 }
 
 fun KZonedInstant.toKZonedDateTime(): KZonedDateTime {
-    val localDate = datePart()
+    val localDate = this.datePart()
     val localTime = offsetedInstant()
     return KZonedDateTime(
         year = localDate.year,

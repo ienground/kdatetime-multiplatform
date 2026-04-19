@@ -32,9 +32,9 @@ open class KInstant(private val timestampMs: Long) : KDateTimeFormattable, KPoin
         return KZonedInstant(timestampMs = timestampMs, zoneOffset = zoneOffset)
     }
 
-    inline infix fun at(zoneOffset: KZoneOffset) = atZoneOffset(zoneOffset)
+    infix fun at(zoneOffset: KZoneOffset) = atZoneOffset(zoneOffset)
 
-    inline fun atLocalZoneOffset(): KZonedInstant = atZoneOffset(KZoneOffset.local())
+    fun atLocalZoneOffset(): KZonedInstant = atZoneOffset(KZoneOffset.local())
 
     override fun hashCode(): Int {
         return timestampMs.hashCode()
@@ -51,7 +51,7 @@ open class KInstant(private val timestampMs: Long) : KDateTimeFormattable, KPoin
         fun parseFrom(input: String, formats: List<KDateTimeFormat>): KInstant {
             formats.forEach { format ->
                 try {
-                    return format.parseToKInstant(input = input)
+                    return format.parseToKZonedDateTime(input = input).toKZonedInstant().dropZoneOffset()
                 } catch (e: ParseDateTimeException) { /* ignore */ }
             }
             throw ParseDateTimeException("$input cannot be parsed")

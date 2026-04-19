@@ -21,7 +21,6 @@ class KInstantTest {
         val t1 = KInstant(1694404171789)
         val t2 = KInstant(1694404171789 - offset)
         val difference = t1 - t2
-        assertTrue(difference is KDuration)
         assertEquals(offset, difference.toMilliseconds())
 
         val difference2 = t2 - t1

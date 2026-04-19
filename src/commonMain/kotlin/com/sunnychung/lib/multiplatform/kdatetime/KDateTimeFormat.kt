@@ -281,7 +281,7 @@ class KDateTimeFormat(val pattern: String) {
                     FormatTokenType.Year -> {
                         year = inputSubstring.toInt()
                         if (token.length == 2) {
-                            year = year!! + if (year!! >= 70) 1900 else 2000
+                            year += if (year >= 70) 1900 else 2000
                         }
                     }
 
@@ -305,7 +305,6 @@ class KDateTimeFormat(val pattern: String) {
                         val result = when (token.type) {
                             FormatTokenType.ampm -> parseAmPmLowercase(inputSubstring)
                             FormatTokenType.AMPM -> parseAmPmUppercase(inputSubstring)
-                            else -> throw IllegalStateException()
                         }
                         amPm = result.value
                         length = result.length
@@ -372,7 +371,7 @@ class KDateTimeFormat(val pattern: String) {
 
     @Deprecated("Use parseToKZonedDateTime(String).toKZonedInstant().dropZoneOffset() instead")
     fun parseToKInstant(input: String): KInstant {
-        val instantWithZone = parseToKZonedInstant(input = input)
+        val instantWithZone =  parseToKZonedDateTime(input = input).toKZonedInstant()
         return instantWithZone.dropZoneOffset()
     }
 

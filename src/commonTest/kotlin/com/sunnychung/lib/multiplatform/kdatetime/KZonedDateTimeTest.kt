@@ -56,7 +56,6 @@ class KZonedDateTimeTest {
     fun minusDateTime() {
         val dateTime1 = KZonedDateTime(year = 2024, month = 1, day = 20, hour = 13, minute = 42, second = 29, zoneOffset = KZoneOffset(-7, 0))
         val dateTime2 = KZonedDateTime(year = 2024, month = 1, day = 20, hour = 13, minute = 42, second = 27, millisecond = 600, zoneOffset = KZoneOffset(-7, 0))
-        assertTrue { (dateTime1 - dateTime2) is KDuration }
         assertEquals(1400, (dateTime1 - dateTime2).toMilliseconds())
     }
 

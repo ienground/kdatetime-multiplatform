@@ -8,7 +8,7 @@ class KZonedInstantTest {
     fun dateTimeParts() {
         // Monday, September 11, 2023 at 6:31:39 AM UTC
         KZonedInstant(timestampMs = 1694413899_001, zoneOffset = KZoneOffset.UTC).run {
-            assertEquals(KDate(2023, 9, 11), datePart())
+            assertEquals(KDate(2023, 9, 11), toKZonedDateTime().datePart())
             assertEquals(6, hourPart())
             assertEquals(31, minutePart())
             assertEquals(39, secondPart())
@@ -17,7 +17,7 @@ class KZonedInstantTest {
 
         // Monday, September 11th 2023, 7:16:39 pm GMT+12:45
         KZonedInstant(timestampMs = 1694413899_001, zoneOffset = KZoneOffset(hours = 12, minutes = 45)).run {
-            assertEquals(KDate(2023, 9, 11), datePart())
+            assertEquals(KDate(2023, 9, 11), toKZonedDateTime().datePart())
             assertEquals(19, hourPart())
             assertEquals(16, minutePart())
             assertEquals(39, secondPart())
@@ -26,7 +26,7 @@ class KZonedInstantTest {
 
         // Monday, September 11th 2023, 2:31:39 am GMT-04:00
         KZonedInstant(timestampMs = 1694413899_001, zoneOffset = KZoneOffset(hours = -4, minutes = 0)).run {
-            assertEquals(KDate(2023, 9, 11), datePart())
+            assertEquals(KDate(2023, 9, 11), toKZonedDateTime().datePart())
             assertEquals(2, hourPart())
             assertEquals(31, minutePart())
             assertEquals(39, secondPart())
@@ -35,7 +35,7 @@ class KZonedInstantTest {
 
         // Monday, September 11th 2023, 2:16:39 am GMT-04:15
         KZonedInstant(timestampMs = 1694413899_001, zoneOffset = KZoneOffset(hours = -4, minutes = 15)).run {
-            assertEquals(KDate(2023, 9, 11), datePart())
+            assertEquals(KDate(2023, 9, 11), toKZonedDateTime().datePart())
             assertEquals(2, hourPart())
             assertEquals(16, minutePart())
             assertEquals(39, secondPart())
