@@ -33,7 +33,7 @@ class Demo {
         val lastTrainTime = localDateTime.toKZonedDateTime().copy(hour = 23, minute = 10, second = 0, millisecond = 0)
         println(KDateTimeFormat.ISO8601_DATETIME.format(lastTrainTime.toKZonedInstant())) // 2023-09-13T23:10:00+08:00
 
-        val parsedDateTime = KDateTimeFormat.ISO8601_DATETIME. parseToKZonedDateTime("2023-09-10T17:18:53-07:00").toKZonedInstant()
+        val parsedDateTime = KDateTimeFormat.ISO8601_DATETIME.parseToKZonedDateTime("2023-09-10T17:18:53-07:00").toKZonedInstant()
         println(parsedDateTime.toMilliseconds()) // 1694391533000
 
         val duration1 = 95.seconds()
