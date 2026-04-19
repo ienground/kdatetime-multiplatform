@@ -13,6 +13,9 @@ class SerializerTest {
     @Serializable data class KInstantAsLongData(val data: KInstantAsLong)
     @Serializable data class KZonedInstantData(val data: KZonedInstant)
     @Serializable data class KZoneOffsetData(val data: KZoneOffset)
+    @Serializable data class KDateData(val data: KDate)
+    @Serializable data class KZonedDateTimeData(val data: KZonedDateTime)
+    @Serializable data class KDurationData(val data: KDuration)
 
     @Test
     fun serializeKZonedInstant() {
@@ -100,4 +103,126 @@ class SerializerTest {
         }
     }
 
+    @Test
+    fun serializeKDate() {
+        val data = KDateData(KDate(2026, 4, 19))
+        val json = Json.encodeToString(data)
+        assertEquals("{\"data\":{\"year\":2026,\"month\":4,\"day\":19}}", json)
+    }
+
+    @Test
+    fun deserializeKDate() {
+        "{\"data\":{\"year\":2026,\"month\":4,\"day\":19}}".let {
+            val data = Json.decodeFromString<KDateData>(it)
+            assertEquals(2026, data.data.year)
+            assertEquals(4, data.data.month)
+            assertEquals(19, data.data.day)
+        }
+        "{\"data\":{\"year\":1970,\"month\":1,\"day\":1}}".let {
+            val data = Json.decodeFromString<KDateData>(it)
+            assertEquals(1970, data.data.year)
+            assertEquals(1, data.data.month)
+            assertEquals(1, data.data.day)
+        }
+        "{\"data\":{\"year\":2000,\"month\":1,\"day\":1}}".let {
+            val data = Json.decodeFromString<KDateData>(it)
+            assertEquals(2000, data.data.year)
+            assertEquals(1, data.data.month)
+            assertEquals(1, data.data.day)
+        }
+        "{\"data\":{\"year\":1999,\"month\":12,\"day\":31}}".let {
+            val data = Json.decodeFromString<KDateData>(it)
+            assertEquals(1999, data.data.year)
+            assertEquals(12, data.data.month)
+            assertEquals(31, data.data.day)
+        }
+    }
+
+    @Test
+    fun serializeKZonedDateTime() {
+        val data = KZonedDateTimeData(KZonedDateTime(2026, 4, 19, 12, 1, 2, 3, KZoneOffset(9, 0)))
+        val json = Json.encodeToString(data)
+        assertEquals("{\"data\":\"2026-04-19T12:01:02.003+09:00\"}", json)
+
+        val data2 = KZonedDateTimeData(KZonedDateTime(2026, 4, 19, 12, 1, 2, 3, KZoneOffset(-5, 30)))
+        val json2 = Json.encodeToString(data2)
+        assertEquals("{\"data\":\"2026-04-19T12:01:02.003-05:30\"}", json2)
+    }
+
+    @Test
+    fun deserializeKZonedDateTime() {
+        "{\"data\":\"2026-04-19T12:01:02.003+09:00\"}".let {
+            val data = Json.decodeFromString<KZonedDateTimeData>(it)
+            assertEquals(2026, data.data.year)
+            assertEquals(4, data.data.month)
+            assertEquals(19, data.data.day)
+            assertEquals(12, data.data.hour)
+            assertEquals(1, data.data.minute)
+            assertEquals(2, data.data.second)
+            assertEquals(3, data.data.millisecond)
+            assertEquals(9, data.data.zoneOffset.hours)
+            assertEquals(0, data.data.zoneOffset.minutes)
+        }
+        "{\"data\":\"2026-01-01T00:00:00.000Z\"}".let {
+            val data = Json.decodeFromString<KZonedDateTimeData>(it)
+            assertEquals(2026, data.data.year)
+            assertEquals(1, data.data.month)
+            assertEquals(1, data.data.day)
+            assertEquals(0, data.data.hour)
+            assertEquals(0, data.data.minute)
+            assertEquals(0, data.data.second)
+            assertEquals(0, data.data.millisecond)
+            assertEquals(0, data.data.zoneOffset.hours)
+            assertEquals(0, data.data.zoneOffset.minutes)
+        }
+        "{\"data\":\"2026-12-31T23:59:59.999-05:30\"}".let {
+            val data = Json.decodeFromString<KZonedDateTimeData>(it)
+            assertEquals(2026, data.data.year)
+            assertEquals(12, data.data.month)
+            assertEquals(31, data.data.day)
+            assertEquals(23, data.data.hour)
+            assertEquals(59, data.data.minute)
+            assertEquals(59, data.data.second)
+            assertEquals(999, data.data.millisecond)
+            assertEquals(-5, data.data.zoneOffset.hours)
+            assertEquals(30, data.data.zoneOffset.minutes)
+        }
+        "{\"data\":\"2026-06-15T09:30:45.123+05:45\"}".let {
+            val decoded = Json.decodeFromString<KZonedDateTimeData>(it)
+            val reEncoded = Json.encodeToString(decoded)
+            val reDecoded = Json.decodeFromString<KZonedDateTimeData>(reEncoded)
+            assertEquals(decoded.data.year, reDecoded.data.year)
+            assertEquals(decoded.data.month, reDecoded.data.month)
+            assertEquals(decoded.data.day, reDecoded.data.day)
+            assertEquals(decoded.data.hour, reDecoded.data.hour)
+            assertEquals(decoded.data.minute, reDecoded.data.minute)
+            assertEquals(decoded.data.second, reDecoded.data.second)
+            assertEquals(decoded.data.millisecond, reDecoded.data.millisecond)
+            assertEquals(decoded.data.zoneOffset.hours, reDecoded.data.zoneOffset.hours)
+            assertEquals(decoded.data.zoneOffset.minutes, reDecoded.data.zoneOffset.minutes)
+        }
+    }
+
+    @Test
+    fun serializeKDuration() {
+        val data = KDurationData(KDuration.of(50, KFixedTimeUnit.Hour))
+        val json = Json.encodeToString(data)
+        assertEquals("{\"data\":{\"millis\":180000000}}", json)
+
+        val data2 = KDurationData(KDuration.of(160, KFixedTimeUnit.MilliSecond))
+        val json2 = Json.encodeToString(data2)
+        assertEquals("{\"data\":{\"millis\":160}}", json2)
+    }
+
+    @Test
+    fun deserializeKDuration() {
+        "{\"data\":{\"millis\":180000000}}".let {
+            val data = Json.decodeFromString<KDurationData>(it)
+            assertEquals(180000000, data.data.millis)
+        }
+        "{\"data\":{\"millis\":160}}".let {
+            val data = Json.decodeFromString<KDurationData>(it)
+            assertEquals(160, data.data.millis)
+        }
+    }
 }

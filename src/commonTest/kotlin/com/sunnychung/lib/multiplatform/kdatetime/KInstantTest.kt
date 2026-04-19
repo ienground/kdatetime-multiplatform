@@ -1,7 +1,7 @@
 package com.sunnychung.lib.multiplatform.kdatetime
 
 import com.sunnychung.lib.multiplatform.kdatetime.extension.seconds
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlin.math.absoluteValue
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -1,21 +1,17 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent
-import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
-    kotlin("multiplatform") version "1.9.25"
-
-    // using a compatible version with IntelliJ IDEA Android plugin, so that the "androidMain" sourceset can be recognized
-    id("com.android.library") version "8.0.2"
-
-    kotlin("plugin.serialization") version "1.9.25"
-    kotlin("plugin.parcelize") version "1.9.25"
+    alias(libs.plugins.android.kotlin.multiplatform.library)
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.serialization)
+    alias(libs.plugins.parcelize)
     id("maven-publish")
     id("sunnychung.publication")
 }
 
 group = "io.github.sunny-chung"
-version = "1.1.2"
+version = libs.versions.lib.version.name.get()
 
 val isGitHubActionsCICD = project.hasProperty("CICD") && project.property("CICD") == "GitHubActions"
 if (isGitHubActionsCICD) {
@@ -28,38 +24,31 @@ repositories {
 }
 
 kotlin {
+    jvmToolchain(17)
+
+    android {
+        namespace = "com.sunnychung.lib.android.kdatetime"
+        compileSdk = 36
+        minSdk = 24
+    }
+
     jvm {
-        jvmToolchain(17)
-//        withJava() // not compatible with Android Gradle plugin
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
         }
     }
-    android {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "1.8"
-            }
-        }
-//        publishAllLibraryVariants()
-        publishLibraryVariants = listOf("release")
-    }
+
     val darwinTargets = listOf<KotlinNativeTarget>(
         iosArm64(),
         iosSimulatorArm64(),
         iosX64(),
         watchosArm64(),
         watchosSimulatorArm64(),
-        watchosX64(),
         tvosArm64(),
         tvosSimulatorArm64(),
-        tvosX64(),
         macosArm64(),
-        macosX64()
     )
-    /*
-        Note: Code compiled by IR has a running time slower than Legacy for 3X that could not pass the tests.
-     */
+
     js(IR) {
         browser {
             commonWebpackConfig {
@@ -70,7 +59,7 @@ kotlin {
             testTask {
                 useMocha {
                     timeout = if (isGitHubActionsCICD) {
-                        "61s" // GitHub Actions Mac runners are significantly slower
+                        "61s"
                     } else {
                         "21s"
                     }
@@ -81,7 +70,7 @@ kotlin {
             testTask {
                 useMocha {
                     timeout = if (isGitHubActionsCICD) {
-                        "61s" // GitHub Actions Mac runners are significantly slower
+                        "61s"
                     } else {
                         "21s"
                     }
@@ -89,42 +78,33 @@ kotlin {
             }
         }
     }
+
     val hostOs = System.getProperty("os.name")
     val isMingwX64 = hostOs.startsWith("Windows")
-//    val nativeTarget = when {
-//        hostOs == "Mac OS X" -> null // macosX64("native")
-//        hostOs == "Linux" -> linuxX64("native")
-//        isMingwX64 -> mingwX64("native")
-//        else -> {
-//            println("Warning: Host OS is not supported in Kotlin/Native.")
-//            null
-//        }
-//    }
 
-    
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.5.1")
+                implementation(libs.serialization.core)
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+                implementation(libs.datetime)
+                implementation(libs.serialization.json)
             }
         }
         val commonJvmMain by creating {
             dependsOn(commonMain)
         }
         val commonJvmTest by creating {
-            dependsOn(commonMain)
+            dependsOn(commonTest)
         }
         val androidMain by getting {
             dependsOn(commonJvmMain)
             dependencies {
-                implementation("org.jetbrains.kotlin:kotlin-parcelize-runtime:1.8.21")
+                implementation(libs.parcelize.runtime)
             }
         }
         val nonAndroidJvmMain by creating {
@@ -132,7 +112,6 @@ kotlin {
         }
         val nonAndroidJvmTest by creating {
             dependsOn(commonJvmTest)
-            dependsOn(nonAndroidJvmMain)
         }
         val jvmMain by getting {
             dependsOn(nonAndroidJvmMain)
@@ -160,10 +139,6 @@ kotlin {
         }
         val jsMain by getting
         val jsTest by getting
-//        if (nativeTarget != null) {
-//            val nativeMain by getting
-//            val nativeTest by getting
-//        }
 
         configure(darwinTargets) {
             val (mainSourceSet, testSourceSet) = when {
@@ -179,30 +154,8 @@ kotlin {
     }
 }
 
-android {
-    namespace = "com.sunnychung.lib.android.kdatetime"
-    compileSdk = 33
-    defaultConfig {
-        minSdk = 24
-    }
-}
-
 tasks.withType<Test> {
     testLogging {
         events = setOf(TestLogEvent.STARTED, TestLogEvent.FAILED, TestLogEvent.PASSED, TestLogEvent.SKIPPED)
     }
 }
-
-//publishing {
-//    publications {
-//        create<MavenPublication>("maven") {
-//            groupId = artifactGroup
-//            artifactId = "kdatetime-multiplatform"
-//            version = artifactVersion
-//
-////            afterEvaluate {
-////                from(components["release"])
-////            }
-//        }
-//    }
-//}

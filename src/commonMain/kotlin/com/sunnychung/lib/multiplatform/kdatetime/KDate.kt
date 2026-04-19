@@ -1,6 +1,7 @@
 package com.sunnychung.lib.multiplatform.kdatetime
 
 import com.sunnychung.lib.multiplatform.kdatetime.annotation.AndroidParcelize
+import kotlinx.serialization.Serializable
 
 /**
  * @param year
@@ -8,6 +9,7 @@ import com.sunnychung.lib.multiplatform.kdatetime.annotation.AndroidParcelize
  * @param day 1-indexed
  */
 @AndroidParcelize
+@Serializable
 data class KDate(val year: Int, val month: Int, val day: Int) : AndroidParcelable {
     init {
         // TODO: allow other calendars

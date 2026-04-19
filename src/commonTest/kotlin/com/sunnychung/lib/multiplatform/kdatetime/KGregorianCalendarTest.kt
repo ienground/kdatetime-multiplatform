@@ -1,12 +1,12 @@
 package com.sunnychung.lib.multiplatform.kdatetime
 
 import com.sunnychung.lib.multiplatform.kdatetime.KGregorianCalendar.addDays
-import kotlinx.datetime.Clock
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlin.time.Clock
 
 class KGregorianCalendarTest {
     val calendar = KGregorianCalendar

@@ -6,5 +6,14 @@ pluginManagement {
     }
 }
 
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        mavenLocal()
+    }
+}
+
+
 rootProject.name = "kdatetime-multiplatform"
 includeBuild("convention-plugins")
