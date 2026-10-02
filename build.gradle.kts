@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
@@ -11,7 +12,7 @@ plugins {
 }
 
 group = "io.github.sunny-chung"
-version = libs.versions.lib.version.name.get()
+version = "1.1.2"
 
 val isGitHubActionsCICD = project.hasProperty("CICD") && project.property("CICD") == "GitHubActions"
 if (isGitHubActionsCICD) {
@@ -30,6 +31,9 @@ kotlin {
         namespace = "com.sunnychung.lib.android.kdatetime"
         compileSdk = 36
         minSdk = 24
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_1_8)
+        }
     }
 
     jvm {
@@ -44,11 +48,17 @@ kotlin {
         iosX64(),
         watchosArm64(),
         watchosSimulatorArm64(),
+        watchosX64(),
         tvosArm64(),
         tvosSimulatorArm64(),
+        tvosX64(),
         macosArm64(),
+        macosX64(),
     )
 
+    /*
+        Note: Code compiled by IR has a running time slower than Legacy for 3X that could not pass the tests.
+     */
     js(IR) {
         browser {
             commonWebpackConfig {
@@ -59,7 +69,7 @@ kotlin {
             testTask {
                 useMocha {
                     timeout = if (isGitHubActionsCICD) {
-                        "61s"
+                        "61s" // GitHub Actions Mac runners are significantly slower
                     } else {
                         "21s"
                     }
@@ -70,7 +80,7 @@ kotlin {
             testTask {
                 useMocha {
                     timeout = if (isGitHubActionsCICD) {
-                        "61s"
+                        "61s" // GitHub Actions Mac runners are significantly slower
                     } else {
                         "21s"
                     }

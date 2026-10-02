@@ -1,8 +1,6 @@
 [versions]
 agp = "9.1.0"
 kotlin = "2.3.20"
-lib-version-name = "1.1.2"
-
 # plugin
 
 # backend
