@@ -107,3 +107,4 @@ fabric.properties
 
 .idea
 /.kotlin
+/convention-plugins/.kotlin
