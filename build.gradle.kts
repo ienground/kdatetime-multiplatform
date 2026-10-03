@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
@@ -12,7 +13,7 @@ plugins {
 }
 
 group = "io.github.sunny-chung"
-version = "1.1.2"
+version = "1.2.0-dev01"
 
 val isGitHubActionsCICD = project.hasProperty("CICD") && project.property("CICD") == "GitHubActions"
 if (isGitHubActionsCICD) {
@@ -29,10 +30,14 @@ kotlin {
 
     android {
         namespace = "com.sunnychung.lib.android.kdatetime"
-        compileSdk = 36
+        compileSdk = 37
         minSdk = 24
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_1_8)
+            freeCompilerArgs.addAll(
+                "-P",
+                "plugin:org.jetbrains.kotlin.parcelize:additionalAnnotation=com.sunnychung.lib.multiplatform.kdatetime.annotation.AndroidParcelize",
+            )
         }
     }
 
@@ -59,7 +64,7 @@ kotlin {
     /*
         Note: Code compiled by IR has a running time slower than Legacy for 3X that could not pass the tests.
      */
-    js(IR) {
+    js {
         browser {
             commonWebpackConfig {
                 cssSupport {
@@ -89,66 +94,70 @@ kotlin {
         }
     }
 
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+        nodejs()
+    }
+
     val hostOs = System.getProperty("os.name")
     val isMingwX64 = hostOs.startsWith("Windows")
 
     sourceSets {
-        val commonMain by getting {
+        val commonMain = getByName("commonMain").apply {
             dependencies {
                 implementation(libs.serialization.core)
             }
         }
-        val commonTest by getting {
+        val commonTest = getByName("commonTest").apply {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(libs.datetime)
                 implementation(libs.serialization.json)
             }
         }
-        val commonJvmMain by creating {
+        val commonJvmMain = create("commonJvmMain").apply {
             dependsOn(commonMain)
         }
-        val commonJvmTest by creating {
+        val commonJvmTest = create("commonJvmTest").apply {
             dependsOn(commonTest)
         }
-        val androidMain by getting {
+        val androidMain = getByName("androidMain").apply {
             dependsOn(commonJvmMain)
             dependencies {
                 implementation(libs.parcelize.runtime)
             }
         }
-        val nonAndroidJvmMain by creating {
+        val nonAndroidJvmMain = create("nonAndroidJvmMain").apply {
             dependsOn(commonJvmMain)
         }
-        val nonAndroidJvmTest by creating {
+        val nonAndroidJvmTest = create("nonAndroidJvmTest").apply {
             dependsOn(commonJvmTest)
         }
-        val jvmMain by getting {
+        val jvmMain = getByName("jvmMain").apply {
             dependsOn(nonAndroidJvmMain)
         }
-        val jvmTest by getting {
+        val jvmTest = getByName("jvmTest").apply {
             dependsOn(nonAndroidJvmTest)
         }
-        val darwinMain by creating {
+        val darwinMain = create("darwinMain").apply {
             dependsOn(commonMain)
         }
-        val darwinTest by creating {
+        val darwinTest = create("darwinTest").apply {
             dependsOn(commonTest)
         }
-        val iosMain by creating {
+        val iosMain = create("iosMain").apply {
             dependsOn(darwinMain)
         }
-        val watchosMain by creating {
+        val watchosMain = create("watchosMain").apply {
             dependsOn(darwinMain)
         }
-        val tvosMain by creating {
+        val tvosMain = create("tvosMain").apply {
             dependsOn(darwinMain)
         }
-        val macosMain by creating {
+        val macosMain = create("macosMain").apply {
             dependsOn(darwinMain)
         }
-        val jsMain by getting
-        val jsTest by getting
 
         configure(darwinTargets) {
             val (mainSourceSet, testSourceSet) = when {
