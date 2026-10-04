@@ -1,7 +1,11 @@
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.`maven-publish`
 import org.gradle.kotlin.dsl.signing
+import java.net.HttpURLConnection
+import java.net.URI
+import java.net.URLEncoder
 import java.util.*
 
 plugins {
@@ -29,12 +33,24 @@ if (secretPropsFile.exists()) {
     }.onEach { (name, value) ->
         ext[name.toString()] = value
     }
-} else {
-    ext["signing.keyId"] = System.getenv("SIGNING_KEY_ID")
-    ext["signing.password"] = System.getenv("SIGNING_PASSWORD")
-    ext["signing.secretKeyRingFile"] = System.getenv("SIGNING_SECRET_KEY_RING_FILE")
-    ext["ossrhUsername"] = System.getenv("OSSRH_USERNAME")
-    ext["ossrhPassword"] = System.getenv("OSSRH_PASSWORD")
+}
+mapOf(
+    "signing.keyId" to "SIGNING_KEY_ID",
+    "signing.password" to "SIGNING_PASSWORD",
+    "signing.secretKeyRingFile" to "SIGNING_SECRET_KEY_RING_FILE",
+    "ossrhUsername" to "OSSRH_USERNAME",
+    "ossrhPassword" to "OSSRH_PASSWORD",
+).forEach { (property, environmentVariable) ->
+    if (ext[property] == null) {
+        val standardProperty = when (property) {
+            "ossrhUsername" -> "mavenCentralUsername"
+            "ossrhPassword" -> "mavenCentralPassword"
+            else -> property
+        }
+        ext[property] = providers.gradleProperty(property).orNull
+            ?: providers.gradleProperty(standardProperty).orNull
+            ?: System.getenv(environmentVariable)
+    }
 }
 
 /**
@@ -48,7 +64,7 @@ if (secretPropsFile.exists()) {
 //    archiveClassifier.set("javadoc")
 //}
 
-fun getExtraString(name: String) = ext[name]?.toString()
+fun getExtraString(name: String) = if (ext.has(name)) ext[name]?.toString() else null
 
 publishing {
     // Configure maven central repository
@@ -103,8 +119,59 @@ signing {
     sign(publishing.publications)
 }
 
+val validateMavenCentralPublication = tasks.register("validateMavenCentralPublication") {
+    group = "publishing"
+    description = "Maven Central 배포 인증 및 서명 설정을 확인합니다."
+    notCompatibleWithConfigurationCache("로컬 배포 설정을 실행 시점에 확인합니다.")
+    doLast {
+        val missing = listOf("ossrhUsername", "ossrhPassword", "signing.keyId", "signing.secretKeyRingFile")
+            .filter { getExtraString(it).isNullOrBlank() }
+        check(missing.isEmpty()) {
+            "local.properties에 배포 설정이 필요합니다: ${missing.joinToString()}"
+        }
+        check(project.file(getExtraString("signing.secretKeyRingFile")!!).isFile) {
+            "signing.secretKeyRingFile에 지정한 서명 키 파일이 없습니다."
+        }
+    }
+}
+
+tasks.withType<PublishToMavenRepository>().configureEach {
+    if (name.endsWith("PublicationToSonatypeRepository")) {
+        dependsOn(validateMavenCentralPublication)
+    }
+}
+
+tasks.register("publishToMavenCentral") {
+    group = "publishing"
+    description = "전체 플랫폼을 업로드하고 해당 네임스페이스의 Central Portal로 전송합니다."
+    dependsOn("publishAllPublicationsToSonatypeRepository")
+    notCompatibleWithConfigurationCache("Maven Central 전송에 로컬 배포 설정을 사용합니다.")
+    doLast {
+        val namespace = getExtraString("publication.namespace") ?: project.group.toString()
+        val encodedNamespace = URLEncoder.encode(namespace, "UTF-8")
+        val connection = URI(
+            "https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/$encodedNamespace?publishing_type=user_managed"
+        ).toURL().openConnection() as HttpURLConnection
+        try {
+            connection.requestMethod = "POST"
+            connection.connectTimeout = 30_000
+            connection.readTimeout = 120_000
+            val credentials = "${getExtraString("ossrhUsername")}:${getExtraString("ossrhPassword")}"
+            val token = Base64.getEncoder().encodeToString(credentials.toByteArray(Charsets.UTF_8))
+            connection.setRequestProperty("Authorization", "Basic $token")
+            check(connection.responseCode in 200..299) {
+                "Maven Central 전송 실패: HTTP ${connection.responseCode} (네임스페이스: $namespace)"
+            }
+            logger.lifecycle("$namespace 배포를 Central Portal로 전송했습니다. Portal에서 검증 결과를 확인하고 공개하세요.")
+        } finally {
+            connection.disconnect()
+        }
+    }
+}
+
 // skip signing if publishing to local maven
 tasks.withType<Sign>().configureEach {
+    mustRunAfter(validateMavenCentralPublication)
     onlyIf("publish to remote") {
         gradle.taskGraph.allTasks.any { it.name.matches("publish.*PublicationToSonatypeRepository".toRegex()) }
             .also { if (it) println("Will sign artifacts") }
