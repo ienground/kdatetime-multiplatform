@@ -2,6 +2,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.kotlin.multiplatform.library)
@@ -12,7 +13,13 @@ plugins {
     id("sunnychung.publication")
 }
 
-group = "io.github.sunny-chung"
+val localPropertiesFile = rootProject.file("local.properties")
+val localProperties = Properties().apply {
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.reader().use(::load)
+    }
+}
+group = localProperties.getProperty("publication.group", "io.github.sunny-chung")
 version = "1.2.0-dev01"
 
 val isGitHubActionsCICD = project.hasProperty("CICD") && project.property("CICD") == "GitHubActions"
