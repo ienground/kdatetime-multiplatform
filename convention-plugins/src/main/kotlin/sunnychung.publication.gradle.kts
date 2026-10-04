@@ -124,6 +124,10 @@ val validateMavenCentralPublication = tasks.register("validateMavenCentralPublic
     description = "Maven Central 배포 인증 및 서명 설정을 확인합니다."
     notCompatibleWithConfigurationCache("로컬 배포 설정을 실행 시점에 확인합니다.")
     doLast {
+        val publishingType = getExtraString("publication.publishingType") ?: "user_managed"
+        check(publishingType in listOf("user_managed", "automatic", "portal_api")) {
+            "publication.publishingType은 user_managed, automatic, portal_api 중 하나여야 합니다."
+        }
         val missing = listOf("ossrhUsername", "ossrhPassword", "signing.keyId", "signing.secretKeyRingFile")
             .filter { getExtraString(it).isNullOrBlank() }
         check(missing.isEmpty()) {
@@ -149,8 +153,9 @@ tasks.register("publishToMavenCentral") {
     doLast {
         val namespace = getExtraString("publication.namespace") ?: project.group.toString()
         val encodedNamespace = URLEncoder.encode(namespace, "UTF-8")
+        val publishingType = getExtraString("publication.publishingType") ?: "user_managed"
         val connection = URI(
-            "https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/$encodedNamespace?publishing_type=user_managed"
+            "https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/$encodedNamespace?publishing_type=$publishingType"
         ).toURL().openConnection() as HttpURLConnection
         try {
             connection.requestMethod = "POST"
@@ -158,11 +163,11 @@ tasks.register("publishToMavenCentral") {
             connection.readTimeout = 120_000
             val credentials = "${getExtraString("ossrhUsername")}:${getExtraString("ossrhPassword")}"
             val token = Base64.getEncoder().encodeToString(credentials.toByteArray(Charsets.UTF_8))
-            connection.setRequestProperty("Authorization", "Basic $token")
+            connection.setRequestProperty("Authorization", "Bearer $token")
             check(connection.responseCode in 200..299) {
                 "Maven Central 전송 실패: HTTP ${connection.responseCode} (네임스페이스: $namespace)"
             }
-            logger.lifecycle("$namespace 배포를 Central Portal로 전송했습니다. Portal에서 검증 결과를 확인하고 공개하세요.")
+            logger.lifecycle("$namespace 배포를 Central Portal로 전송했습니다. 공개 방식: $publishingType")
         } finally {
             connection.disconnect()
         }

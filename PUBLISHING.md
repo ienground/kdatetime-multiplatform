@@ -4,6 +4,7 @@ Git에서 제외되는 `local.properties`에 개인 배포 그룹을 지정합�
 
 ```properties
 publication.group=zone.ien
+publication.publishingType=automatic
 ```
 
 Central Portal 토큰과 서명 설정은 `~/.gradle/gradle.properties`의
@@ -17,7 +18,8 @@ Central Portal 토큰과 서명 설정은 `~/.gradle/gradle.properties`의
 ```
 
 전체 플랫폼 아티팩트를 서명·업로드한 뒤 배포 그룹의 네임스페이스로 Central Portal에
-전송합니다. Portal에서 검증 결과와 POM을 확인하고 공개를 승인합니다.
+전송합니다. `automatic`은 검증 통과 후 자동으로 공개합니다.
+설정을 생략하거나 `user_managed`로 지정하면 Portal에서 직접 공개를 승인합니다.
 사용하는 토큰에는 해당 네임스페이스의 배포 권한이 있어야 합니다.
 
 배포 그룹이 등록된 네임스페이스의 하위 그룹이면 `local.properties`에
